@@ -1,0 +1,65 @@
+
+###### Automatic AOV Setup Button ######
+
+# A button to automatically set the enabled AOVs to a particular list
+# Made by Toby Sanderson 2018
+
+def setupAOV():
+
+    import mtoa.aovs as aovs
+    #### Define list of preferred AOVs with names *EXACTLY* as they appear in the Render Settings window...
+    def setPref():
+        global AOVpref
+        AOVpref = "N", "P", "UV", "Z", "background", "coat", "crypto_material", "crypto_object", "diffuse_albedo", "diffuse_direct", "emission", "shadow", "specular_direct", "specular_indirect", "sss", "volume"
+
+    #### Turn all the current AOVs off...
+    def allOff():
+        allNiceNames = []
+        deactivated = []
+        allCurrentAOV = cmds.ls("*aiAOV_*")
+        for AOV in allCurrentAOV:
+            AOV = str(AOV)
+            command = AOV + ".enabled"
+            cmds.setAttr(command, 0)
+            niceName = AOV[6:]
+            allNiceNames.append(niceName)
+
+            if niceName not in AOVpref: # Deactivate any active but unwanted AOVs
+                deactivated.append(niceName)
+                aovs.AOVInterface().removeAOV(niceName)
+
+        if not allNiceNames:
+            print "All AOVs were previously deactivated!"
+        else:
+            print "These are the AOVs you originally had: ", allNiceNames
+        if deactivated:
+            print "These AOVs were desctivated because they aren't on the list: ", deactivated
+
+    #### Turn the preferred set of AOVs on...
+    def prefOn():
+        AOVerror = []
+        for AOV in AOVpref:
+            command = "aiAOV_" + AOV + ".enabled"
+            try:
+                cmds.setAttr(command, 1)
+            except:
+                try:
+                    aovs.AOVInterface().addAOV(AOV)
+                except:
+                    AOVerror.append(AOV)
+
+        if AOVerror:
+            from maya import OpenMaya
+            print "These AOVs couldn't be switched on: ", AOVerror
+            OpenMaya.MGlobal.displayError("Something didn't work right, see the script editor for details...")
+
+        else:
+            print "Complete: The list of preferred AOVs has been turned on, and everything else switched off!",
+
+    #### Run the script
+    setPref()
+    allOff()
+    prefOn()
+
+import maya.cmds as cmds
+setupAOV()
